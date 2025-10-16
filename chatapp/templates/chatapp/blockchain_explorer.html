@@ -1,0 +1,457 @@
+{% extends 'chatapp/base1.html' %}
+{% block title %}Blockchain Explorer{% endblock %}
+
+{% block extra_css %}
+<style>
+  .explorer-container {
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .page-header {
+    background: white;
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    animation: slideDown 0.3s ease;
+  }
+
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .page-title {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--gray-800);
+  }
+
+  .page-title i {
+    font-size: 2.5rem;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: rotate 3s linear infinite;
+  }
+
+  @keyframes rotate {
+    from { transform: rotateY(0deg); }
+    to { transform: rotateY(360deg); }
+  }
+
+  .chain-stats {
+    display: flex;
+    gap: 2rem;
+    align-items: center;
+  }
+
+  .stat-item {
+    text-align: center;
+  }
+
+  .stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .stat-label {
+    font-size: 0.85rem;
+    color: var(--gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .blocks-container {
+    background: white;
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    box-shadow: var(--shadow-lg);
+  }
+
+  .blockchain-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    max-height: 70vh;
+    overflow-y: auto;
+    padding-right: 1rem;
+  }
+
+  .blockchain-list::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .blockchain-list::-webkit-scrollbar-track {
+    background: var(--gray-100);
+    border-radius: 4px;
+  }
+
+  .blockchain-list::-webkit-scrollbar-thumb {
+    background: var(--gray-400);
+    border-radius: 4px;
+  }
+
+  .blockchain-list::-webkit-scrollbar-thumb:hover {
+    background: var(--gray-500);
+  }
+
+  .block-card {
+    background: linear-gradient(135deg, var(--gray-100) 0%, white 100%);
+    border: 2px solid var(--gray-200);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+    animation: blockAppear 0.4s ease;
+  }
+
+  @keyframes blockAppear {
+    from {
+      opacity: 0;
+      transform: translateX(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  .block-card::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 4px;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+  }
+
+  .block-card:hover {
+    transform: translateX(8px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--primary);
+  }
+
+  .block-card.genesis {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+    color: white;
+    border-color: var(--primary);
+  }
+
+  .block-card.genesis::before {
+    background: white;
+  }
+
+  .block-card.genesis .block-label {
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  .block-card.genesis .block-hash {
+    color: rgba(255, 255, 255, 0.95);
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  .block-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+
+  .block-index {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 0.9rem;
+  }
+
+  .block-card.genesis .block-index {
+    background: white;
+    color: var(--primary);
+  }
+
+  .block-type {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0.4rem 0.8rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .block-type.genesis {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+  }
+
+  .block-type.message {
+    background: #dbeafe;
+    color: #1e40af;
+  }
+
+  .block-type.room_creation {
+    background: #dcfce7;
+    color: #166534;
+  }
+
+  .block-type.user_registration {
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  .block-type.room_join {
+    background: #e0e7ff;
+    color: #3730a3;
+  }
+
+  .block-info {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .block-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+  .block-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--gray-500);
+    font-weight: 700;
+  }
+
+  .block-value {
+    font-size: 0.95rem;
+    color: var(--gray-800);
+    word-break: break-all;
+  }
+
+  .block-data {
+    background: var(--gray-100);
+    padding: 1rem;
+    border-radius: var(--radius);
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    color: var(--gray-700);
+    white-space: pre-wrap;
+    word-break: break-all;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+
+  .block-card.genesis .block-data {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+  }
+
+  .block-hash {
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    background: var(--gray-100);
+    padding: 0.5rem 0.8rem;
+    border-radius: var(--radius);
+    color: var(--gray-700);
+    word-break: break-all;
+  }
+
+  .error-banner {
+    background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%);
+    color: white;
+    padding: 1.5rem;
+    border-radius: var(--radius-lg);
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow-lg);
+    animation: shake 0.5s ease;
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+  }
+
+  .error-banner h4 {
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .error-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .error-item {
+    background: rgba(255, 255, 255, 0.15);
+    padding: 0.8rem;
+    border-radius: var(--radius);
+    border-left: 4px solid white;
+  }
+
+  .back-btn {
+    background: linear-gradient(135deg, var(--gray-700), var(--gray-800));
+    color: white;
+    padding: 0.7rem 1.5rem;
+    border-radius: 20px;
+    text-decoration: none;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: var(--transition);
+    box-shadow: var(--shadow);
+  }
+
+  .back-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+    color: white;
+  }
+
+  @media (max-width: 768px) {
+    .page-header {
+      flex-direction: column;
+      gap: 1.5rem;
+      text-align: center;
+    }
+
+    .chain-stats {
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .page-title {
+      font-size: 1.5rem;
+    }
+
+    .blocks-container {
+      padding: 1rem;
+    }
+
+    .block-card {
+      padding: 1rem;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="explorer-container">
+  <div class="page-header">
+    <h1 class="page-title">
+      <i class="fas fa-cube"></i>
+      Blockchain Explorer
+    </h1>
+    <div class="chain-stats">
+      <div class="stat-item">
+        <div class="stat-value">{{ blocks|length }}</div>
+        <div class="stat-label">Total Blocks</div>
+      </div>
+      <a href="{% url 'dashboard' %}" class="back-btn">
+        <i class="fas fa-arrow-left"></i>
+        Dashboard
+      </a>
+    </div>
+  </div>
+
+  {% if errors %}
+  <div class="error-banner">
+    <h4>
+      <i class="fas fa-exclamation-triangle"></i>
+      Blockchain Integrity Errors Detected!
+    </h4>
+    <ul class="error-list">
+      {% for idx, msg in errors %}
+        <li class="error-item">
+          <strong>Block {{ idx }}:</strong> {{ msg }}
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  <div class="blocks-container">
+    <div class="blockchain-list">
+      {% for block in blocks %}
+        <div class="block-card {% if block.data.type == 'genesis' %}genesis{% endif %}">
+          <div class="block-header">
+            <span class="block-index">
+              <i class="fas fa-link"></i>
+              Block #{{ block.index }}
+            </span>
+            <span class="block-type {{ block.data.type|default:'unknown' }}">
+              <i class="fas fa-{% if block.data.type == 'genesis' %}star{% elif block.data.type == 'message' %}comment{% elif block.data.type == 'room_creation' %}plus-circle{% elif block.data.type == 'user_registration' %}user-plus{% elif block.data.type == 'room_join' %}sign-in-alt{% else %}circle{% endif %}"></i>
+              {{ block.data.type|default:"Unknown" }}
+            </span>
+          </div>
+
+          <div class="block-info">
+            <div class="block-field">
+              <span class="block-label">Block Data</span>
+              <pre class="block-data">{{ block.data|safe }}</pre>
+            </div>
+
+            <div class="block-field">
+              <span class="block-label">Hash</span>
+              <div class="block-hash">{{ block.hash }}</div>
+            </div>
+
+            <div class="block-field">
+              <span class="block-label">Previous Hash</span>
+              <div class="block-hash">{{ block.previous_hash }}</div>
+            </div>
+
+            <div class="block-field">
+              <span class="block-label">Timestamp</span>
+              <div class="block-value">
+                <i class="fas fa-clock"></i>
+                {{ block.timestamp }}
+              </div>
+            </div>
+          </div>
+        </div>
+      {% empty %}
+        <div class="block-card">
+          <p style="text-align: center; color: var(--gray-500);">
+            <i class="fas fa-info-circle"></i>
+            No blocks found in the blockchain
+          </p>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

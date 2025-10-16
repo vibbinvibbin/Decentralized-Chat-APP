@@ -1,0 +1,599 @@
+{% extends 'chatapp/base1.html' %}
+{% block title %}Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+  .dashboard-grid {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 2rem;
+    margin-top: 2rem;
+  }
+
+  .sidebar {
+    background: white;
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-lg);
+    height: fit-content;
+    position: sticky;
+    top: 100px;
+    animation: slideRight 0.3s ease;
+  }
+
+  @keyframes slideRight {
+    from {
+      opacity: 0;
+      transform: translateX(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  .sidebar-section {
+    margin-bottom: 2rem;
+  }
+
+  .sidebar-section:last-child {
+    margin-bottom: 0;
+  }
+
+  .sidebar-title {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--gray-500);
+    font-weight: 700;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .sidebar-list {
+    list-style: none;
+  }
+
+  .sidebar-item {
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius);
+    margin-bottom: 0.5rem;
+    transition: var(--transition);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--gray-700);
+    text-decoration: none;
+    font-size: 0.95rem;
+  }
+
+  .sidebar-item:hover {
+    background: var(--gray-100);
+    transform: translateX(4px);
+    color: var(--gray-800);
+  }
+
+  .sidebar-item.active {
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    color: white;
+  }
+
+  .sidebar-item i {
+    width: 20px;
+    text-align: center;
+  }
+
+  .online-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--success);
+    margin-left: auto;
+    animation: pulse 2s infinite;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+  }
+
+  .current-user-badge {
+    background: var(--primary);
+    color: white;
+    padding: 0.15rem 0.5rem;
+    border-radius: 8px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    margin-left: auto;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  .main-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    animation: fadeIn 0.3s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .stat-card {
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    color: white;
+    padding: 2rem;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200px;
+    height: 200px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+  }
+
+  .stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-xl);
+  }
+
+  .stat-card:nth-child(2) {
+    background: linear-gradient(135deg, var(--success), #059669);
+  }
+
+  .stat-card:nth-child(3) {
+    background: linear-gradient(135deg, var(--warning), #d97706);
+  }
+
+  .stat-icon {
+    font-size: 2.5rem;
+    opacity: 0.3;
+    margin-bottom: 1rem;
+  }
+
+  .stat-value {
+    font-size: 2.8rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+
+  .stat-label {
+    font-size: 0.9rem;
+    opacity: 0.95;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .card {
+    background: white;
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    box-shadow: var(--shadow-lg);
+    transition: var(--transition);
+  }
+
+  .card:hover {
+    box-shadow: var(--shadow-xl);
+  }
+
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--gray-200);
+  }
+
+  .card-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--gray-800);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .card-title i {
+    color: var(--primary);
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+
+  .form-label {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--gray-800);
+    margin-bottom: 0.5rem;
+  }
+
+  .form-control {
+    width: 100%;
+    padding: 0.85rem 1.2rem;
+    border: 2px solid var(--gray-200);
+    border-radius: var(--radius);
+    font-size: 1rem;
+    transition: var(--transition);
+    font-family: inherit;
+    background: var(--gray-100);
+  }
+
+  .form-control:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(34, 113, 255, 0.1);
+    background: white;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
+    border: none;
+    padding: 0.85rem 2rem;
+    border-radius: var(--radius-xl);
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: var(--transition);
+    box-shadow: 0 4px 15px rgba(34, 113, 255, 0.3);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(34, 113, 255, 0.4);
+  }
+
+  .notification-badge {
+    background: var(--danger);
+    color: white;
+    padding: 0.25rem 0.6rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    margin-left: auto;
+    animation: bounce 2s infinite;
+  }
+
+  @keyframes bounce {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+  }
+
+  .notifications-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .notification-item {
+    background: linear-gradient(135deg, var(--gray-100), white);
+    padding: 1.2rem;
+    border-radius: var(--radius);
+    border-left: 4px solid var(--primary);
+    transition: var(--transition);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .notification-item:hover {
+    background: var(--gray-100);
+    transform: translateX(4px);
+    box-shadow: var(--shadow);
+  }
+
+  .notification-room {
+    font-weight: 700;
+    color: var(--primary);
+  }
+
+  .notification-pin {
+    font-family: monospace;
+    background: var(--dark);
+    color: white;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-weight: 700;
+    font-size: 0.9rem;
+  }
+
+  .messages {
+    list-style: none;
+    margin-bottom: 1.5rem;
+  }
+
+  .messages li {
+    padding: 1rem 1.2rem;
+    margin-bottom: 0.5rem;
+    border-radius: var(--radius);
+    background: var(--gray-100);
+    border-left: 4px solid var(--success);
+    animation: slideDown 0.3s ease;
+  }
+
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .messages li.error {
+    background: #fee;
+    border-left-color: var(--danger);
+    color: var(--danger);
+  }
+
+  .messages li.success {
+    background: #d1fae5;
+    border-left-color: var(--success);
+    color: #065f46;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: var(--gray-500);
+  }
+
+  .empty-state i {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.3;
+  }
+
+  @media (max-width: 1024px) {
+    .dashboard-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .sidebar {
+      position: static;
+    }
+
+    .stats-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 576px) {
+    .form-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .card {
+      padding: 1.5rem;
+    }
+
+    .stat-card {
+      padding: 1.5rem;
+    }
+
+    .stat-value {
+      font-size: 2.2rem;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+{% if messages %}
+  <ul class="messages">
+    {% for message in messages %}
+      <li class="{% if message.tags %}{{ message.tags }}{% endif %}">
+        <i class="fas fa-{% if 'error' in message.tags %}exclamation-circle{% elif 'success' in message.tags %}check-circle{% else %}info-circle{% endif %}"></i>
+        {{ message }}
+      </li>
+    {% endfor %}
+  </ul>
+{% endif %}
+
+<div class="dashboard-grid">
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <h3 class="sidebar-title">
+        <i class="fas fa-users"></i> Users
+      </h3>
+      <ul class="sidebar-list">
+        {% for u in users %}
+          <li class="sidebar-item {% if u.username == user.username %}active{% endif %}">
+            <i class="fas fa-user-circle"></i>
+            <span>{{ u.username }}</span>
+            {% if u.username == user.username %}
+              <span class="current-user-badge">YOU</span>
+            {% elif u.username in online_usernames %}
+              <span class="online-indicator"></span>
+            {% endif %}
+          </li>
+        {% empty %}
+          <li class="sidebar-item">
+            <i class="fas fa-user-slash"></i>
+            <span>No users found</span>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div class="sidebar-section">
+      <h3 class="sidebar-title">
+        <i class="fas fa-door-open"></i> Rooms
+      </h3>
+      <ul class="sidebar-list">
+        {% for room in rooms %}
+          <a href="{% url 'dashboard_with_room' room_name=room.room_name %}"
+             class="sidebar-item {% if room.room_name == room_name_from_url %}active{% endif %}">
+            <i class="fas fa-hashtag"></i>
+            <span>{{ room.room_name }}</span>
+          </a>
+        {% empty %}
+          <li class="sidebar-item">
+            <i class="fas fa-door-closed"></i>
+            <span>No rooms available</span>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div class="sidebar-section">
+      <h3 class="sidebar-title">
+        <i class="fas fa-cube"></i> Blockchain
+      </h3>
+      <ul class="sidebar-list">
+        <a href="{% url 'blockchain_explorer' %}" class="sidebar-item">
+          <i class="fas fa-search"></i>
+          <span>Explorer</span>
+        </a>
+      </ul>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon"><i class="fas fa-door-open"></i></div>
+        <div class="stat-value">{{ rooms.count }}</div>
+        <div class="stat-label">Total Rooms</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon"><i class="fas fa-users"></i></div>
+        <div class="stat-value">{{ users.count }}</div>
+        <div class="stat-label">Total Users</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon"><i class="fas fa-cube"></i></div>
+        <div class="stat-value">{{ blocks|length }}</div>
+        <div class="stat-label">Blockchain Blocks</div>
+      </div>
+    </div>
+
+    {% if notifications %}
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">
+          <i class="fas fa-bell"></i>
+          Notifications
+          <span class="notification-badge">{{ notifications.count }}</span>
+        </h2>
+      </div>
+      <div class="notifications-list">
+        {% for note in notifications %}
+          <div class="notification-item">
+            <p><i class="fas fa-envelope"></i> {{ note.message }}</p>
+            <p style="margin-top: 0.5rem; font-size: 0.9rem; color: var(--gray-600);">
+              Room: <span class="notification-room">{{ note.room.room_name }}</span> |
+              PIN: <span class="notification-pin">{{ note.pin }}</span>
+            </p>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">
+          <i class="fas fa-paper-plane"></i>
+          Send Room PIN Notification
+        </h2>
+      </div>
+      <form method="POST" action="{% url 'send_pin_notification' %}">
+        {% csrf_token %}
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label"><i class="fas fa-door-open"></i> Select Room</label>
+            <select name="room_id" class="form-control" required>
+              <option value="">Choose a room...</option>
+              {% for room in rooms %}
+                {% if room.owner == user %}
+                  <option value="{{ room.id }}">{{ room.room_name }}</option>
+                {% endif %}
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label"><i class="fas fa-user"></i> Select User</label>
+            <select name="recipient_id" class="form-control" required>
+              <option value="">Choose a user...</option>
+              {% for u in users %}
+                {% if u != user %}
+                  <option value="{{ u.id }}">{{ u.username }}</option>
+                {% endif %}
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label"><i class="fas fa-key"></i> Room PIN</label>
+            <input type="password" name="pin" class="form-control" placeholder="Enter room PIN" required>
+          </div>
+        </div>
+        <button type="submit" class="btn-primary">
+          <i class="fas fa-paper-plane"></i> Send Notification
+        </button>
+      </form>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">
+          <i class="fas fa-plus-circle"></i>
+          {% if room_name_from_url %}Join Room{% else %}Join or Create Room{% endif %}
+        </h2>
+      </div>
+      <form method="POST" action="{% if room_name_from_url %}{% url 'dashboard_with_room' room_name=room_name_from_url %}{% else %}{% url 'dashboard' %}{% endif %}">
+        {% csrf_token %}
+        <div class="form-grid">
+          {% if not room_name_from_url %}
+          <div class="form-group">
+            <label class="form-label"><i class="fas fa-hashtag"></i> Room Name</label>
+            <input type="text" name="room" class="form-control" placeholder="Enter room name" required>
+          </div>
+          {% else %}
+          <input type="hidden" name="room" value="{{ room_name_from_url }}">
+          {% endif %}
+          <div class="form-group">
+            <label class="form-label"><i class="fas fa-lock"></i> Room PIN</label>
+            <input type="password" name="pin" class="form-control" placeholder="Enter room PIN" required>
+          </div>
+        </div>
+        <button type="submit" class="btn-primary">
+          <i class="fas fa-{% if room_name_from_url %}sign-in-alt{% else %}plus{% endif %}"></i>
+          {% if room_name_from_url %}Join Room{% else %}Create / Join Room{% endif %}
+        </button>
+      </form>
+    </div>
+  </main>
+</div>
+{% endblock %}

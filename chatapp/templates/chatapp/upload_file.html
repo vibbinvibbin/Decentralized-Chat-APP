@@ -1,0 +1,540 @@
+{% extends 'chatapp/base1.html' %}
+{% block title %}Upload File - {{ room_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  .upload-wrapper {
+    max-width: 700px;
+    margin: 0 auto;
+  }
+
+  .upload-container {
+    background: white;
+    border-radius: var(--radius-lg);
+    padding: 3rem;
+    box-shadow: var(--shadow-xl);
+    animation: fadeIn 0.3s ease;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .upload-header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+  }
+
+  .upload-icon {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+    font-size: 2.5rem;
+    color: white;
+    animation: float 3s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+
+  .upload-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--gray-800);
+    margin-bottom: 0.5rem;
+  }
+
+  .upload-subtitle {
+    color: var(--gray-500);
+    font-size: 1rem;
+  }
+
+  .room-badge {
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    color: white;
+    padding: 0.4rem 1rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 0.5rem;
+  }
+
+  .alert {
+    padding: 1rem 1.2rem;
+    border-radius: var(--radius);
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    animation: slideDown 0.3s ease;
+  }
+
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .alert-success {
+    background: linear-gradient(135deg, var(--success), #059669);
+    color: white;
+  }
+
+  .alert-danger {
+    background: linear-gradient(135deg, var(--danger), #dc2626);
+    color: white;
+  }
+
+  .upload-form {
+    margin-bottom: 2rem;
+  }
+
+  .dropzone {
+    border: 3px dashed var(--gray-300);
+    border-radius: var(--radius-lg);
+    padding: 3rem 2rem;
+    text-align: center;
+    background: var(--gray-100);
+    transition: var(--transition);
+    cursor: pointer;
+    position: relative;
+  }
+
+  .dropzone:hover,
+  .dropzone.dragover {
+    border-color: var(--primary);
+    background: rgba(34, 113, 255, 0.05);
+  }
+
+  .dropzone-icon {
+    font-size: 4rem;
+    color: var(--gray-400);
+    margin-bottom: 1rem;
+    transition: var(--transition);
+  }
+
+  .dropzone:hover .dropzone-icon {
+    color: var(--primary);
+    transform: scale(1.1);
+  }
+
+  .dropzone-text {
+    font-size: 1.1rem;
+    color: var(--gray-700);
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+
+  .dropzone-subtext {
+    font-size: 0.9rem;
+    color: var(--gray-500);
+  }
+
+  .file-input {
+    display: none;
+  }
+
+  .file-preview {
+    background: var(--gray-100);
+    border-radius: var(--radius);
+    padding: 1rem;
+    margin-top: 1rem;
+    display: none;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .file-preview.active {
+    display: flex;
+  }
+
+  .preview-icon {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+  }
+
+  .preview-info {
+    flex: 1;
+  }
+
+  .preview-name {
+    font-weight: 600;
+    color: var(--gray-800);
+    margin-bottom: 0.2rem;
+  }
+
+  .preview-size {
+    font-size: 0.85rem;
+    color: var(--gray-500);
+  }
+
+  .preview-remove {
+    background: var(--danger);
+    color: white;
+    border: none;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .preview-remove:hover {
+    transform: scale(1.1);
+  }
+
+  .upload-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+  }
+
+  .btn {
+    padding: 0.85rem 2rem;
+    border-radius: var(--radius-xl);
+    border: none;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: var(--transition);
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
+    box-shadow: 0 4px 15px rgba(34, 113, 255, 0.3);
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(34, 113, 255, 0.4);
+  }
+
+  .btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .btn-secondary {
+    background: var(--gray-300);
+    color: var(--gray-700);
+  }
+
+  .btn-secondary:hover {
+    background: var(--gray-400);
+    color: white;
+  }
+
+  .progress-bar-container {
+    width: 100%;
+    height: 8px;
+    background: var(--gray-200);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 1rem;
+    display: none;
+  }
+
+  .progress-bar-container.active {
+    display: block;
+  }
+
+  .progress-bar {
+    height: 100%;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    transition: width 0.3s ease;
+    width: 0%;
+  }
+
+  .upload-tips {
+    background: var(--gray-100);
+    border-left: 4px solid var(--primary);
+    padding: 1.5rem;
+    border-radius: var(--radius);
+    margin-top: 2rem;
+  }
+
+  .tips-title {
+    font-weight: 700;
+    color: var(--gray-800);
+    margin-bottom: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .tips-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .tips-list li {
+    color: var(--gray-600);
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .tips-list li i {
+    color: var(--primary);
+  }
+
+  @media (max-width: 576px) {
+    .upload-container {
+      padding: 2rem 1.5rem;
+    }
+
+    .upload-title {
+      font-size: 1.5rem;
+    }
+
+    .dropzone {
+      padding: 2rem 1rem;
+    }
+
+    .upload-actions {
+      flex-direction: column;
+    }
+
+    .btn {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="upload-wrapper">
+  <div class="upload-container">
+    <div class="upload-header">
+      <div class="upload-icon">
+        <i class="fas fa-cloud-upload-alt"></i>
+      </div>
+      <h1 class="upload-title">Upload File</h1>
+      <p class="upload-subtitle">Share files with your team</p>
+      <span class="room-badge">
+        <i class="fas fa-hashtag"></i>
+        {{ room_name }}
+      </span>
+    </div>
+
+    {% if message %}
+      <div class="alert alert-{{ message_type }}">
+        <i class="fas fa-{% if message_type == 'success' %}check-circle{% else %}exclamation-circle{% endif %}"></i>
+        {{ message }}
+      </div>
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data" class="upload-form" id="uploadForm">
+      {% csrf_token %}
+      
+      <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
+        <div class="dropzone-icon">
+          <i class="fas fa-file-upload"></i>
+        </div>
+        <div class="dropzone-text">Click to browse or drag and drop</div>
+        <div class="dropzone-subtext">Support for any file type</div>
+      </div>
+
+      <input type="file" name="file" id="fileInput" class="file-input" required>
+
+      <div class="file-preview" id="filePreview">
+        <div class="preview-icon">
+          <i class="fas fa-file"></i>
+        </div>
+        <div class="preview-info">
+          <div class="preview-name" id="fileName"></div>
+          <div class="preview-size" id="fileSize"></div>
+        </div>
+        <button type="button" class="preview-remove" onclick="removeFile()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="progress-bar-container" id="progressContainer">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+
+      <div class="upload-actions">
+        <button type="submit" class="btn btn-primary" id="uploadBtn" disabled>
+          <i class="fas fa-cloud-upload-alt"></i>
+          Upload File
+        </button>
+        <a href="{% url 'chat_room1' room_name=room_name %}" class="btn btn-secondary">
+          <i class="fas fa-arrow-left"></i>
+          Back to Chat
+        </a>
+      </div>
+    </form>
+
+    <div class="upload-tips">
+      <div class="tips-title">
+        <i class="fas fa-lightbulb"></i>
+        Upload Tips
+      </div>
+      <ul class="tips-list">
+        <li>
+          <i class="fas fa-check-circle"></i>
+          <span>Maximum file size: 50MB</span>
+        </li>
+        <li>
+          <i class="fas fa-check-circle"></i>
+          <span>All file types are supported</span>
+        </li>
+        <li>
+          <i class="fas fa-check-circle"></i>
+          <span>Files are stored securely</span>
+        </li>
+        <li>
+          <i class="fas fa-check-circle"></i>
+          <span>Share files with your team members</span>
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const dropzone = document.getElementById('dropzone');
+  const fileInput = document.getElementById('fileInput');
+  const filePreview = document.getElementById('filePreview');
+  const uploadBtn = document.getElementById('uploadBtn');
+  const uploadForm = document.getElementById('uploadForm');
+  const progressContainer = document.getElementById('progressContainer');
+  const progressBar = document.getElementById('progressBar');
+
+  // Prevent default drag behaviors
+  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    dropzone.addEventListener(eventName, preventDefaults, false);
+    document.body.addEventListener(eventName, preventDefaults, false);
+  });
+
+  function preventDefaults(e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+
+  // Highlight drop zone when dragging over it
+  ['dragenter', 'dragover'].forEach(eventName => {
+    dropzone.addEventListener(eventName, () => {
+      dropzone.classList.add('dragover');
+    }, false);
+  });
+
+  ['dragleave', 'drop'].forEach(eventName => {
+    dropzone.addEventListener(eventName, () => {
+      dropzone.classList.remove('dragover');
+    }, false);
+  });
+
+  // Handle dropped files
+  dropzone.addEventListener('drop', (e) => {
+    const dt = e.dataTransfer;
+    const files = dt.files;
+    fileInput.files = files;
+    handleFiles(files);
+  });
+
+  // Handle file input change
+  fileInput.addEventListener('change', (e) => {
+    handleFiles(e.target.files);
+  });
+
+  function handleFiles(files) {
+    if (files.length > 0) {
+      const file = files[0];
+      displayFilePreview(file);
+      uploadBtn.disabled = false;
+    }
+  }
+
+  function displayFilePreview(file) {
+    const fileName = document.getElementById('fileName');
+    const fileSize = document.getElementById('fileSize');
+    
+    fileName.textContent = file.name;
+    fileSize.textContent = formatFileSize(file.size);
+    
+    filePreview.classList.add('active');
+  }
+
+  function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+  }
+
+  function removeFile() {
+    fileInput.value = '';
+    filePreview.classList.remove('active');
+    uploadBtn.disabled = true;
+  }
+
+  // Simulate upload progress
+  uploadForm.addEventListener('submit', (e) => {
+    if (fileInput.files.length > 0) {
+      uploadBtn.disabled = true;
+      uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+      progressContainer.classList.add('active');
+      
+      // Simulate progress (remove this in production)
+      let progress = 0;
+      const interval = setInterval(() => {
+        progress += 10;
+        progressBar.style.width = progress + '%';
+        if (progress >= 90) {
+          clearInterval(interval);
+        }
+      }, 100);
+    }
+  });
+</script>
+{% endblock %}
