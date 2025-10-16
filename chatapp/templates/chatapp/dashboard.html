@@ -12,13 +12,12 @@
 
   .sidebar {
     background: white;
-    border-radius: var(--radius-lg);
-    padding: 1.5rem;
+    border-radius: 12px;
+    padding: 1.2rem;
     box-shadow: var(--shadow-lg);
-    height: fit-content;
-    position: sticky;
-    top: 100px;
-    animation: slideRight 0.3s ease;
+    height: auto;  /* Change from "fit-content" */
+    position: static;  /* Change from "sticky" */
+    top: auto;
   }
 
   @keyframes slideRight {
@@ -125,8 +124,8 @@
 
   .stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));  /* More flexible */
+    gap: 1rem;  /* Reduce from 1.5rem */
   }
 
   .stat-card {
@@ -399,7 +398,7 @@
     }
 
     .stat-card {
-      padding: 1.5rem;
+      padding: 1.2rem;
     }
 
     .stat-value {
@@ -537,9 +536,7 @@
             <select name="room_id" class="form-control" required>
               <option value="">Choose a room...</option>
               {% for room in rooms %}
-                {% if room.owner == user %}
                   <option value="{{ room.id }}">{{ room.room_name }}</option>
-                {% endif %}
               {% endfor %}
             </select>
           </div>

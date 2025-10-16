@@ -14,15 +14,14 @@
   }
 
   .chat-container {
-    background: white;
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-xl);
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    height: calc(100vh - 180px);
-    animation: fadeIn 0.3s ease;
-  }
+  background: white;
+  border-radius: 12px;
+  box-shadow: var(--shadow-xl);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 160px);  /* Adjust based on navbar height */
+}
 
   @keyframes fadeIn {
     from { opacity: 0; transform: scale(0.98); }
@@ -400,31 +399,106 @@
   }
 
   .typing-indicator {
-    padding: 0.5rem 1rem;
+    padding: 0.75rem 1rem;
     background: white;
     border-radius: 20px;
     align-self: flex-start;
     display: none;
-    box-shadow: var(--shadow-sm);
-  }
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    margin-bottom: 1rem;
+    width: auto;
+    max-width: 200px;
+    position: relative;
+    margin-top: auto; /* Push to bottom */
+}
 
-  .typing-indicator span {
-    display: inline-block;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--gray-400);
-    margin: 0 2px;
-    animation: typing 1.4s infinite;
-  }
+    .typing-indicator span {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--gray-400);
+        margin: 0 2px;
+        animation: typing 1.4s infinite;
+    }
 
-  .typing-indicator span:nth-child(2) {
-    animation-delay: 0.2s;
-  }
+    .typing-indicator span:nth-child(2) {
+        animation-delay: 0.2s;
+    }
 
-  .typing-indicator span:nth-child(3) {
-    animation-delay: 0.4s;
-  }
+    .typing-indicator span:nth-child(3) {
+        animation-delay: 0.4s;
+    }
+
+    @keyframes typing {
+        0%, 60%, 100% {
+            transform: translateY(0);
+            opacity: 0.5;
+        }
+        30% {
+            transform: translateY(-10px);
+            opacity: 1;
+        }
+    }
+
+    /* Make sure chat-log has flex layout for typing indicator */
+    #chat-log {
+        display: flex;
+        flex-direction: column;
+        height: 400px;
+        background-color: #f0f0f0;
+        border-radius: 10px;
+        padding: 20px;
+        overflow-y: auto;
+        margin-bottom: 20px;
+    }
+
+    /* Ensure messages don't push typing indicator around */
+    .chat-message {
+        margin: 10px 0;
+        background-color: #ffffff;
+        padding: 10px;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        word-wrap: break-word;
+    }
+
+    .chat-message.left {
+        align-self: flex-start;
+        max-width: 70%;
+        border-bottom-left-radius: 4px;
+        border: 1px solid #e0e0e0;
+    }
+
+    .chat-message.right {
+        align-self: flex-end;
+        max-width: 70%;
+        border-bottom-right-radius: 4px;
+        background: linear-gradient(135deg, var(--primary), var(--accent));
+        color: white;
+    }
+
+    .message-sender {
+        font-weight: 700;
+        font-size: 0.85rem;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .message-text {
+        font-size: 0.95rem;
+        line-height: 1.5;
+        word-wrap: break-word;
+        margin-bottom: 0.5rem;
+    }
+
+    .message-meta {
+        font-size: 0.7rem;
+        opacity: 0.7;
+        font-family: monospace;
+    }
 
   @keyframes typing {
     0%, 60%, 100% {
@@ -578,101 +652,211 @@ const chatSocket = new WebSocket(
     '/ws/chat/' + roomName + '/'
 );
 
+chatSocket.onopen = function(e) {
+    console.log('WebSocket connection established');
+};
+
 chatSocket.onmessage = function(e) {
-    const data = JSON.parse(e.data);
-    const chatLog = document.getElementById('chat-log');
+    try {
+        const data = JSON.parse(e.data);
+        const chatLog = document.getElementById('chat-log');
 
-    if (data.typing) {
-        showTypingIndicator(data.username);
-        return;
+        if (data.typing) {
+            showTypingIndicator(data.username);
+            return;
+        }
+
+        hideTypingIndicator();
+
+        const align = data.username === username ? 'right' : 'left';
+        const div = document.createElement("div");
+        div.className = "chat-message " + align;
+        div.innerHTML = `
+            <div class="message-sender">
+                <i class="fas fa-user-circle"></i>
+                ${escapeHtml(data.username)}
+            </div>
+            <div class="message-text">${escapeHtml(data.message)}</div>
+            <div class="message-meta">
+                <i class="fas fa-fingerprint"></i>
+                ${data.message_hash.slice(0, 16)}...
+            </div>
+        `;
+        
+        // Insert before typing indicator
+        const typingIndicator = document.getElementById('typing-indicator');
+        if (typingIndicator) {
+            chatLog.insertBefore(div, typingIndicator);
+        } else {
+            chatLog.appendChild(div);
+        }
+        
+        chatLog.scrollTop = chatLog.scrollHeight;
+    } catch (error) {
+        console.error('Error parsing message:', error);
     }
+};
 
-    hideTypingIndicator();
-
-    const align = data.username === username ? 'right' : 'left';
-    const div = document.createElement("div");
-    div.className = "chat-message " + align;
-    div.innerHTML = `
-        <div class="message-sender">
-            <i class="fas fa-user-circle"></i>
-            ${data.username}
-        </div>
-        <div class="message-text">${data.message}</div>
-        <div class="message-meta">
-            <i class="fas fa-fingerprint"></i>
-            ${data.message_hash.slice(0, 16)}...
-        </div>
-    `;
-    chatLog.insertBefore(div, document.getElementById('typing-indicator'));
-    chatLog.scrollTop = chatLog.scrollHeight;
+chatSocket.onerror = function(error) {
+    console.error('WebSocket error:', error);
 };
 
 chatSocket.onclose = function(e) {
-    console.error('Chat socket closed');
+    console.error('Chat socket closed unexpectedly');
 };
 
+// Send message on button click
 document.getElementById("chat-message-submit").onclick = function() {
     const input = document.getElementById("chat-message-input");
     const message = input.value.trim();
-    if (message === "") return;
+    
+    if (message === "") {
+        console.warn('Empty message');
+        return;
+    }
 
-    chatSocket.send(JSON.stringify({ message }));
-    input.value = "";
+    // Check if websocket is connected
+    if (chatSocket.readyState !== WebSocket.OPEN) {
+        alert('Connection lost. Please refresh the page.');
+        return;
+    }
+
+    try {
+        chatSocket.send(JSON.stringify({ 
+            message: message 
+        }));
+        input.value = "";
+    } catch (error) {
+        console.error('Error sending message:', error);
+    }
 };
 
+// Send message on Enter key
 document.getElementById("chat-message-input").addEventListener("keyup", function(e) {
-    if (e.keyCode === 13) {
+    if (e.keyCode === 13 && !e.shiftKey) {
+        e.preventDefault();
         document.getElementById("chat-message-submit").click();
     }
 });
 
-// Typing indicator
+// Typing indicator with timeout
 let typingTimer;
+let isTyping = false;
+let typingTimeout = null;
+
 document.getElementById("chat-message-input").addEventListener("input", function() {
     clearTimeout(typingTimer);
-    chatSocket.send(JSON.stringify({ typing: true }));
-    typingTimer = setTimeout(() => {
-        chatSocket.send(JSON.stringify({ typing: false }));
-    }, 1000);
+    
+    if (!isTyping && chatSocket.readyState === WebSocket.OPEN) {
+        isTyping = true;
+        try {
+            chatSocket.send(JSON.stringify({ typing: true }));
+        } catch (error) {
+            console.error('Error sending typing indicator:', error);
+        }
+    }
+    
+    // Hide typing after 2 seconds of inactivity
+    clearTimeout(typingTimeout);
+    typingTimeout = setTimeout(() => {
+        isTyping = false;
+        hideTypingIndicator();
+    }, 2000);
 });
 
 function showTypingIndicator(user) {
     const indicator = document.getElementById('typing-indicator');
-    indicator.style.display = 'flex';
+    const chatLog = document.getElementById('chat-log');
+    
+    if (indicator && indicator.style.display === 'none') {
+        indicator.style.display = 'flex';
+        indicator.innerHTML = `
+            <span></span><span></span><span></span>
+            <span style="margin-left: 8px; font-size: 0.85rem; color: #999;">
+                ${escapeHtml(user)} is typing...
+            </span>
+        `;
+        // Scroll to bottom to show typing indicator
+        setTimeout(() => {
+            chatLog.scrollTop = chatLog.scrollHeight;
+        }, 100);
+    }
 }
 
 function hideTypingIndicator() {
     const indicator = document.getElementById('typing-indicator');
-    indicator.style.display = 'none';
+    if (indicator) {
+        indicator.style.display = 'none';
+        indicator.innerHTML = '<span></span><span></span><span></span>';
+    }
+}
+
+// Escape HTML to prevent XSS
+function escapeHtml(text) {
+    if (!text) return '';
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return text.replace(/[&<>"']/g, m => map[m]);
 }
 
 function toggleDropdown() {
     const dropdown = document.getElementById("dropdown");
-    dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+    if (dropdown) {
+        dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+    }
 }
 
 function clearChat() {
-    document.getElementById("modal-overlay").style.display = "flex";
+    const modal = document.getElementById("modal-overlay");
+    if (modal) {
+        modal.style.display = "flex";
+    }
     toggleDropdown();
 }
 
 function closeModal() {
-    document.getElementById("modal-overlay").style.display = "none";
+    const modal = document.getElementById("modal-overlay");
+    if (modal) {
+        modal.style.display = "none";
+    }
 }
 
 function confirmClearChat() {
+    const roomName = "{{ room_name }}";
     fetch(`/clear/${roomName}/`, {
         method: "POST",
         headers: {
             "X-CSRFToken": getCookie("csrftoken")
         }
-    }).then(response => response.json())
-      .then(data => {
-          if (data.status === "success") {
-              document.getElementById("chat-log").innerHTML = '<div class="typing-indicator" id="typing-indicator"><span></span><span></span><span></span></div>';
-          }
-          closeModal();
-      });
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Failed to clear chat');
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.status === "success") {
+            const chatLog = document.getElementById("chat-log");
+            if (chatLog) {
+                chatLog.innerHTML = '<div class="typing-indicator" id="typing-indicator" style="display: none;"><span></span><span></span><span></span></div>';
+            }
+            alert('Chat cleared successfully');
+        } else {
+            alert('Failed to clear chat');
+        }
+        closeModal();
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while clearing chat');
+        closeModal();
+    });
 }
 
 function getCookie(name) {

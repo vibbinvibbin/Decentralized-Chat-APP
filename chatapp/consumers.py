@@ -1,4 +1,4 @@
-# consumers.py
+# chatapp/consumers.py
 
 import json
 import time
@@ -40,7 +40,6 @@ blockchain = Blockchain()
 
 
 class ChatConsumer(AsyncWebsocketConsumer):
-    from chatapp.models import Message, Room
     async def connect(self):
         self.room_name = self.scope['url_route']['kwargs']['room_name']
         self.room_group_name = f'chat_{self.room_name}'
@@ -51,7 +50,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
         await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
 
     async def receive(self, text_data):
-        data = json.loads(text_data)
+        try:
+            data = json.loads(text_data)
+        except json.JSONDecodeError:
+            print("Invalid JSON received")
+            return
+
+        # Handle typing indicator
         if data.get('typing'):
             await self.channel_layer.group_send(
                 self.room_group_name,
@@ -61,7 +66,14 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 }
             )
             return
-        message = data['message']
+
+        # Handle message - FIX: Check if message key exists
+        message = data.get('message', '').strip()
+        
+        if not message:
+            print("Empty message received")
+            return
+
         username = self.scope["user"].username if self.scope["user"].is_authenticated else "Anonymous"
 
         # Add to blockchain and get hash
@@ -98,5 +110,15 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def save_message(self, sender, room_name, message, message_hash):
-        room = Room.objects.get(room_name=room_name)
-        Message.objects.create(room=room, sender=sender, message=message, message_hash=message_hash)
+        try:
+            room = Room.objects.get(room_name=room_name)
+            Message.objects.create(
+                room=room, 
+                sender=sender, 
+                message=message, 
+                message_hash=message_hash
+            )
+        except Room.DoesNotExist:
+            print(f"Room {room_name} does not exist")
+        except Exception as e:
+            print(f"Error saving message: {e}")
